@@ -12,87 +12,120 @@ protocol ScrollPercentProvider: AnyObject {
 }
 
 protocol ConversionsProvider: AnyObject {
-    func getConversions(_ completion: @escaping ([String]) -> ())
+    func getConversions(_ completion: @escaping ([Conversion]) -> ())
 }
+typealias DataBuilderCompletion = (_ res: Encodable) -> Void
+typealias DataBuilder = (_ completion: @escaping DataBuilderCompletion) -> Void
 
-
-class TikOperation: Operation {
-    private let trackInfo: TrackInfo
+class TikOperation: Operation, @unchecked Sendable {
+    private let dataBuilder: DataBuilder
     private let dispatchDate: Date
     private let tikUseCase: SendTikCuseCase
-    private weak var scrollPercentProvider: ScrollPercentProvider?
-    private weak var conversionsProvider: ConversionsProvider?
+    private let path: String
+    private let contentType: ContentType
     
-    init(trackInfo: TrackInfo, dispatchDate: Date, tikUseCase: SendTikCuseCase = SendTik(), scrollPercentProvider: ScrollPercentProvider?, conversionsProvider: ConversionsProvider?) {
-        self.trackInfo = trackInfo
+    private var timer: DispatchSourceTimer?
+    private let lock = NSRecursiveLock()
+
+    init(
+        dataBuilder: @escaping DataBuilder,
+        dispatchDate: Date,
+        tikUseCase: SendTikCuseCase = SendTik(),
+        path: String?,
+        contentType: ContentType?
+    ) {
+        self.dataBuilder = dataBuilder
         self.dispatchDate = dispatchDate
         self.tikUseCase = tikUseCase
-        self.scrollPercentProvider = scrollPercentProvider
-        self.conversionsProvider = conversionsProvider
+        self.path = path ?? ""
+        self.contentType = contentType ?? ContentType.JSON
+        super.init()
     }
     
-    private var timer: Timer?
-    
-    private var runing: Bool = false {
-        didSet {
-            willChangeValue(forKey: "isFinished")
-            willChangeValue(forKey: "isExecuting")
-            didChangeValue(forKey: "isFinished")
-            didChangeValue(forKey: "isExecuting")
+    private var _running: Bool = false
+    private var running: Bool {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _running
+        }
+        set {
+            var didChange = false
+            lock.lock()
+            if _running != newValue {
+                willChangeValue(forKey: "isFinished")
+                willChangeValue(forKey: "isExecuting")
+                _running = newValue
+                didChange = true
+            }
+            lock.unlock()
+            
+            if didChange {
+                didChangeValue(forKey: "isFinished")
+                didChangeValue(forKey: "isExecuting")
+            }
         }
     }
-    
-    override var isAsynchronous: Bool {true}
-    
-    override var isFinished: Bool {!runing}
-    
-    override var isExecuting: Bool {runing}
+
+    override var isAsynchronous: Bool { true }
+    override var isFinished: Bool { !running }
+    override var isExecuting: Bool { running }
     
     override func start() {
-        guard !isCancelled else {return}
-        runing = true
+        guard !isCancelled else {
+            finish()
+            return
+        }
         
-        self.timer = Timer(fire: self.dispatchDate, interval: 0, repeats: false, block: { [weak self] (timer) in
-            self?.getScrollPercent { (scrollPercent) in
-                self?.getConversions({ (conversions) in
-                    var finalTrackInfo = self?.trackInfo
-                    finalTrackInfo?.scrollPercent = scrollPercent
-                    finalTrackInfo?.conversions = conversions.isEmpty ? nil : conversions
-                    let data = finalTrackInfo?.params
-                    if let data = data {
-                        self?.tikUseCase.tik(params: data)
-                    }
-                    self?.timer?.invalidate()
-                    self?.runing = false
-                })
-                
+        running = true
+        
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global(qos: .utility))
+        let timeInterval = dispatchDate.timeIntervalSinceNow
+        let deadline = DispatchTime.now() + max(timeInterval, 0)
+
+        timer.schedule(deadline: deadline)
+        
+        timer.setEventHandler { [weak self] in
+            guard let self = self, !self.isCancelled else {
+                self?.finish()
+                return
             }
-        })
-        
-        RunLoop.current.add(self.timer!, forMode: .common)
-        RunLoop.current.run()
+            
+            let track = { [weak self] (data: Encodable?) in
+                guard let self = self, !self.isCancelled else {
+                    self?.finish()
+                    return
+                }
+                
+                let params = data?.params
+                
+                if let params = params {
+                    self.tikUseCase.tik(path: self.path, type: self.contentType, params: params)
+                }
+                self.finish()
+            }
+            
+           self.dataBuilder(track)
+        }
+
+        self.timer = timer
+        timer.resume()
     }
     
     override func cancel() {
-        timer?.invalidate()
-        runing = false
+        super.cancel()
+        finish()
     }
     
-    private func getScrollPercent(_ completion: @escaping (Float?) -> ()) {
-        guard let scrollPercentProvider = scrollPercentProvider else {
-            completion(nil)
-            return
-        }
+    private func finish() {
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard running else { return }
         
-        scrollPercentProvider.getScrollPercent(completion)
-    }
-    
-    private func getConversions(_ completion: @escaping ([String]) -> ()) {
-        guard let conversionsProvider = conversionsProvider else {
-            completion([])
-            return
-        }
-        
-        conversionsProvider.getConversions(completion)
+        timer?.setEventHandler {} 
+        timer?.cancel()
+        timer = nil
+        running = false
     }
 }

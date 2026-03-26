@@ -8,11 +8,22 @@
 import Foundation
 
 protocol TikOperationFactory {
-    func buildOperation(trackInfo: TrackInfo, dispatchDate: Date, scrollPercentProvider: ScrollPercentProvider?, conversionsProvider: ConversionsProvider?) -> Operation
+    func buildOperation(
+        dataBuilder: @escaping DataBuilder,
+        dispatchDate: Date,
+        path: String?,
+        contentType: ContentType?
+    ) -> Operation
 }
 
 class TickOperationProvider: TikOperationFactory {
-    func buildOperation(trackInfo: TrackInfo, dispatchDate: Date, scrollPercentProvider: ScrollPercentProvider?, conversionsProvider: ConversionsProvider?) -> Operation {
-        TikOperation(trackInfo: trackInfo, dispatchDate: dispatchDate, tikUseCase: SendTik(), scrollPercentProvider: scrollPercentProvider, conversionsProvider: conversionsProvider)
+    private let sharedTikUseCase: SendTikCuseCase
+
+    init(tikUseCase: SendTikCuseCase = SendTik()) {
+        self.sharedTikUseCase = tikUseCase
+    }
+    
+    func buildOperation(dataBuilder: @escaping DataBuilder, dispatchDate: Date, path: String?, contentType: ContentType?) -> Operation {
+        TikOperation(dataBuilder: dataBuilder, dispatchDate: dispatchDate, tikUseCase: sharedTikUseCase, path: path, contentType: contentType)
     }
 }

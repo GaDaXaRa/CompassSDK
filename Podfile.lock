@@ -1,3 +1,23 @@
-PODFILE CHECKSUM: b2746bf7330c3820ff12cfaa80125abbb9f8222c
+PODS:
+  - MarfeelSDK-iOS (2.18.4)
+  - SwiftUIIntrospect (1.2.0)
 
-COCOAPODS: 1.11.3
+DEPENDENCIES:
+  - MarfeelSDK-iOS (from `.`)
+  - SwiftUIIntrospect (~> 1.0)
+
+SPEC REPOS:
+  trunk:
+    - SwiftUIIntrospect
+
+EXTERNAL SOURCES:
+  MarfeelSDK-iOS:
+    :path: "."
+
+SPEC CHECKSUMS:
+  MarfeelSDK-iOS: 84a737b7770d5125894fc305532b35abe9748980
+  SwiftUIIntrospect: 35fbc9ae46c869ae7290afdecf6f70c2b8c86b13
+
+PODFILE CHECKSUM: e920ba50a10ffb55ddf90460357520dd74e13f8d
+
+COCOAPODS: 1.16.2

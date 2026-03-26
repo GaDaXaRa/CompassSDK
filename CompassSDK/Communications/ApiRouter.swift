@@ -6,11 +6,18 @@
 //
 
 import Foundation
+import UIKit
+
+enum ContentType: String, Codable {
+    case JSON = "application/json; charset=utf-8"
+    case FORM = "application/x-www-form-urlencoded"
+}
 
 protocol ApiCall {
     var path: String {get}
     var params: [String: Any] {get}
     var baseUrl: URL? {get}
+    var type: ContentType {get}
 }
 
 extension ApiCall {
@@ -18,9 +25,24 @@ extension ApiCall {
         guard let baseUrl = baseUrl?.appendingPathComponent(path), let params = params as? [String: CustomStringConvertible] else {return nil}
         var request = URLRequest(url: baseUrl)
         request.httpMethod = "POST"
-        request.encodeParameters(parameters: params)
-        request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        
+        if type == ContentType.FORM {
+            request.encodeParameters(parameters: params)
+        } else {
+            request.httpBody = try? JSONSerialization.data(withJSONObject: params)
+        }
+        
+        request.addValue(type.rawValue, forHTTPHeaderField: "Content-Type")
+        request.addValue(userAgent, forHTTPHeaderField: "User-Agent")
+
         return request
+    }
+    
+    private var userAgent: String {
+        let codeVersion = Bundle.compassSDK?.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
+        let deviceType = UIDevice.current.userInterfaceIdiom == .pad ? "tablet" : "mobile"
+        
+        return "Marfeel-iOS-SDK/\(codeVersion) (\(UIDevice.current.model)) \(deviceType)"
     }
 }
 

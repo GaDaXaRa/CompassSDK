@@ -15,16 +15,17 @@ Pod::Spec.new do |spec|
   #  summary should be tweet-length, and the description more in depth.
   #
 
-  spec.name         = "CompassSDK"
-  spec.version      = "1.0.6"
-  spec.summary      = "iOS version of CompassSDK."
+  spec.name         = "MarfeelSDK-iOS"
+  spec.version      = "2.18.7"
+  spec.summary      = "iOS version of MarfeelSDK."
 
-  # This description is used to generate tags and improve search results.
+
+  # This description is used to generate tags and improve searc h results.
   #   * Think: What does it do? Why did you write it? What is the focus?
   #   * Try to keep it short, snappy and to the point.
   #   * Write the description between the DESC delimiters below.
   #   * Finally, don't worry about the indent, CocoaPods strips it!
-  spec.description  = "CompassSDK to allow realtime news tracking from Compass software"
+  spec.description  = "MarfeelSDK to allow realtime news tracking from Marfeel software"
 
   spec.homepage     = "https://www.marfeel.com/docs/compass/"
   # spec.screenshots  = "www.example.com/screenshots_1.gif", "www.example.com/screenshots_2.gif"
@@ -37,8 +38,8 @@ Pod::Spec.new do |spec|
   #  Popular ones are 'MIT', 'BSD' and 'Apache License, Version 2.0'.
   #
 
-  spec.license      = "MIT"
-  # spec.license      = { :type => "MIT", :file => "FILE_LICENSE" }
+  # spec.license      = "MIT"
+  spec.license      = { :type => "MIT", :file => "LICENSE.md" }
 
 
   # ――― Author Metadata  ――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
@@ -51,10 +52,7 @@ Pod::Spec.new do |spec|
   #  profile URL.
   #
 
-  spec.author             = { "Miguel Santiago Rodríguez" => "gadaxara@gmail.com" }
-  # Or just: spec.author    = "Miguel Santiago Rodríguez"
-  # spec.authors            = { "Miguel Santiago Rodríguez" => "gadaxara@gmail.com" }
-  # spec.social_media_url   = "https://twitter.com/Miguel Santiago Rodríguez"
+  spec.author             = { "Marc Garcia Lopez" => "marc.garcia@marfeel.com" }
 
   # ――― Platform Specifics ――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
   #
@@ -78,7 +76,7 @@ Pod::Spec.new do |spec|
   #  Supports git, hg, bzr, svn and HTTP.
   #
 
-  spec.source       = { :git => "https://github.com/GaDaXaRa/CompassSDK.git", :tag => spec.version.to_s }
+  spec.source       = { :git => "https://github.com/Marfeel/MarfeelSDK-iOS.git", :tag => spec.version.to_s }
 
 
   # ――― Source Code ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
@@ -91,7 +89,8 @@ Pod::Spec.new do |spec|
 
   spec.source_files  = "CompassSDK", "CompassSDK/**/*.{swift}"
   spec.exclude_files = "Classes/Exclude"
-
+  spec.resource_bundles = { 'marfeelsdk_apple_privacy' => ['CompassSDK/Resources/PrivacyInfo.xcprivacy'] }
+  
   # spec.public_header_files = "Classes/**/*.h"
 
 
